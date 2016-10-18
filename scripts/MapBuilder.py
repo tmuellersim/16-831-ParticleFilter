@@ -26,4 +26,7 @@ class MapBuilder:
 if __name__=="__main__":
     
     # src_path_map = '../map/wean.dat'
+    # map1 = MapBuilder(src_path_map)
+    # map1.visualize_map()
+    
     pass

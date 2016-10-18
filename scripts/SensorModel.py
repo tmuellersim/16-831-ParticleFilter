@@ -149,6 +149,8 @@ class SensorModel:
 
 if __name__=='__main__':
 
-    src_path_map = '../map/wean.dat'
-    sensor1 = SensorModel(src_path_map)
-    sensor1.plot_prob_zt1()
+    # src_path_map = '../map/wean.dat'
+    # sensor1 = SensorModel(src_path_map)
+    # sensor1.plot_prob_zt1()
+
+    pass
