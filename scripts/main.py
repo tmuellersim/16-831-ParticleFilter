@@ -1,5 +1,8 @@
 import numpy as np
 
+from MotionModel import MotionModel
+from MapBuilder import MapBuilder
+
 #-------------------------------PARSE THE DATA FILE----------------------------------
 #this parses robotdata1 into three lists: odometry, laser position and time, and laser readings
 
@@ -32,36 +35,53 @@ with open('robotdata1.log') as inputfile:
 
 #-------------------------------MAIN SCRIPT----------------------------------
 
-#initalize X_bar_t
-X_bar = [[[0,0,0], 0.0]]*len(results_O) #tuple of x,y,theta and w
+#-----------------initialize variables-------------------
+alpha1 = 0.1
+alpha2 = 0.1
+alpha3 = 0.1
+alpha4 = 0.1
+mot=MotionModel(alpha1, alpha2, alpha3, alpha4)
+map=MapBuilder('../map/wean.dat') #I can't seem to call the map
 
-M=1000 #number of particles
+M=100 #number of particles
 
 #initialize particle locations
-p_x = np.random.uniform(0,800,M) #800 is hard coded here
-p_y = np.random.uniform(0,800,M)
-p_theta = np.random.uniform(0,800,M)
+p_x = np.random.uniform(0,800,M) #change this to match the map
+p_y = np.random.uniform(0,800,M) #change this to match the map
+p_theta = np.random.uniform(-3.14,3.14,M)
+
+#--------------------------------------------------------
 
 for t in range(1, len(results_O)):
 
+	X_bar = [[[0,0,0], 0.0]]*M #list of lists of x,y,theta and w
+
 	#calculate u_t
-	u_t = results_O[0:2] #this is just x,y,theta (no timestep)
+	u_t0 = results_O[t-1][0:3] 
+	u_t1 = results_O[t][0:3] #this is just x,y,theta (no timestep)
 	
 	#calculate z_t
 	z_t = results_L[t]; #all 180 scans at each timestep
 	
-	for i in range(0,M):
+	for m in range(0,M):
 		#pull x_t from motion model
-		x_t = [49, 2, 34] #just a placeholder
+		x_t0 = [p_x[0], p_y[0], p_theta[0]] #assign x_t0 as one of the particles from random initialization
+		x_t1 = mot.sample_motion_model(u_t0, u_t1, x_t0)
 		
 		#pull w_t from sensor model
-		w_t = 1.5; #just a placeholder
+		w_t = 1.0; #set at 1 right now, all weights equal
 		
 		#update X_bar_t
-		X_bar[t][0] = [x + y for x, y in zip(X_bar[t][0], x_t)]
-		X_bar[t][1] = X_bar[t][1] + w_t
-	
-print X_bar[0]	
+		X_bar[m][0] = x_t1   #[a + b for a, b in zip(X_bar[t][0], x_t1)]
+		X_bar[m][1] = w_t   #X_bar[t][1] + w_t
 		
+		
+	#HERE WE IMPLEMENT THE IMPORTANCE SAMPLING, BUT ERIC SAID WE SHOULD FIRST TRY WITHOUT	
+	#
+	#
+	
+print X_bar[50]	
+
+#map.visualize_map()		
 		
 	
