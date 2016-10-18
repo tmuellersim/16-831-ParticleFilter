@@ -36,9 +36,6 @@ class MotionModel:
 
         return x_t1
 
-    def getMap()
-        return self._prob
-
 if __name__=="__main__":
 
     pass

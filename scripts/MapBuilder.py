@@ -23,10 +23,13 @@ class MapBuilder:
         plt.ion(); plt.imshow(self._prob, cmap='Greys'); plt.axis([0, self._size_x, 0, self._size_y]); plt.draw()
         time.sleep(100)
 
+    def getMap():
+        return self._prob
+
 if __name__=="__main__":
     
     # src_path_map = '../map/wean.dat'
     # map1 = MapBuilder(src_path_map)
     # map1.visualize_map()
-    
+
     pass
