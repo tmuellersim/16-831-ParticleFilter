@@ -8,7 +8,8 @@ from matplotlib import pyplot as plt
 from matplotlib import figure as fig
 import time
 
-#----------------------------FUNCTION TO SHOW THE MAP--------------------------------
+
+#----------------------------FUNCTIONS TO DISPLAY THE MAP--------------------------------
 
 def mapInit(mapList):
 	fig = plt.figure()
@@ -19,15 +20,15 @@ def mapInit(mapList):
 
 
 def mapShow(mapList, X_bar):
-	x_locs = [item[0][0] for item in X_bar];
-	y_locs = [item[0][1] for item in X_bar]
+	x_locs = [item[0][0]/10 for item in X_bar]
+	y_locs = [item[0][1]/10 for item in X_bar]
 	scat = plt.scatter(x_locs, y_locs, c='r', marker='o')
 	#plt.draw()
 	plt.pause(0.05)
 	scat.remove()
 
 
-
+	
 
 #-------------------------------PARSE THE DATA FILE----------------------------------
 #this parses robotdata1 into three lists: odometry, laser position and time, and laser readings
@@ -57,29 +58,42 @@ with open('robotdata1.log') as inputfile:
 			results_L.append(floats[6:185]) #180 laser scans
 			
 			
-			
+	
+	
 #-------------------------------MAIN SCRIPT----------------------------------
 
 #-----------------initialize variables-------------------
-alpha1 = 1
-alpha2 = 1
-alpha3 = 1
-alpha4 = 1
+alpha1 = 10
+alpha2 = 10
+alpha3 = 10
+alpha4 = 10
 mot=MotionModel(alpha1, alpha2, alpha3, alpha4)
 
 M=1000 #number of particles
 
 #initialize particle locations
-p_x = np.random.randint(400,450,M) #change this to match the map
-p_y = np.random.randint(100,600,M) #change this to match the map
+p_x = np.random.randint(4000,4500,M) #set for hallway, units in cm
+p_y = np.random.randint(1000,6000,M) #set for hallway, units in cm
 p_theta = np.random.uniform(-3.14,3.14,M)
 
 map=MapBuilder('../map/wean.dat')
 mapList = map.getMap()
 mapInit(mapList)
 
-#--------------------------------------------------------
+#print mapList[400]
+#print len(mapList)
 
+#generate list of locations with '0' value
+counter = 0
+for i in range(0,800):
+	for j in range(0,800):
+		if mapList[i][j]==0:
+			counter = counter+1
+			
+print counter			
+
+
+#----------------------main loop-------------------------
 for t in range(1, len(results_O)):
 
 	X_bar = []
@@ -101,7 +115,7 @@ for t in range(1, len(results_O)):
 		x_t1 = mot.sample_motion_model(u_t0, u_t1, x_t0)
 		
 		#pull w_t from sensor model
-		w_t = 1.0; #set at 1 right now, all weights equal
+		w_t = 1.0/M; #set at 1 right now, all weights equal
 		
 		#update X_bar each timestep
 		list = [x_t1, w_t]
@@ -114,7 +128,6 @@ for t in range(1, len(results_O)):
 	
 	
 	mapShow(mapList, X_bar)
-
 
 
 
