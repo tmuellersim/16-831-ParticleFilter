@@ -16,12 +16,12 @@ class MotionModel:
         self._alpha4 = alpha4
 
     def sample_motion_model(self, u_t0, u_t1, x_t0):
-
-        # param[in] u_t0 : state odometry reading [x, y, theta] at time (t-1) [odometry_frame]   
-        # param[in] u_t1 : state odometry reading [x, y, theta] at time t [odometry_frame]
-        # param[in] x_t0 : state belief [x, y, theta] at time (t-1) [world_frame]
-        # param[out] x_t1 : state belief [x, y, theta] at time t [world_frame]
-
+        """
+        :param[in] u_t0 : particle state odometry reading [x, y, theta] at time (t-1) [odometry_frame]   
+        :param[in] u_t1 : particle state odometry reading [x, y, theta] at time t [odometry_frame]
+        :param[in] x_t0 : particle state belief [x, y, theta] at time (t-1) [world_frame]
+        :param[out] x_t1 : particle state belief [x, y, theta] at time t [world_frame]
+        """
         delta_rot1 = math.atan2(u_t1[1]-u_t0[1], u_t1[0]-u_t0[0]) - u_t0[2]
         delta_trans = math.sqrt( (u_t1[0]-u_t0[0])**2 + (u_t1[1]-u_t0[1])**2 )
         delta_rot2 = u_t1[2] - u_t0[2] - delta_rot1
