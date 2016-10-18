@@ -23,7 +23,7 @@ class MapBuilder:
         plt.ion(); plt.imshow(self._prob, cmap='Greys'); plt.axis([0, self._size_x, 0, self._size_y]); plt.draw()
         time.sleep(100)
 
-    def getMap():
+    def getMap(self):
         return self._prob
 
 if __name__=="__main__":
