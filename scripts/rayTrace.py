@@ -1,11 +1,12 @@
-# import sys
-# import numpy as np
 import math
 from MapBuilder import MapBuilder
 
-def rayTrace(x_t_laser, mapPath, minProbability):
+def rayTrace(x_t_laser, occGrid, minProbability):
+    # x_t_laser <-- laser pose from odometry message, taken from Laser message in log (2nd odometry message)
+    # occGrid is the MapBuilder class
+    # minProbability is the threshold for detecting an obstacle in the occGrid
     # x_t_laser should be in the frame of the laser, not the robot origin!
-    occGrid = MapBuilder(mapPath)  # CHANGE THIS, LOADING MAP EVERY TIME TAKES TOO LONG!!!
+
     # occGrid.visualize_map()
     heading = x_t_laser[2]
     laserRange = []
@@ -28,7 +29,7 @@ def rayTrace(x_t_laser, mapPath, minProbability):
             x_current += dx
             y_current += dy
             # Check if walked outside map area
-            if (x_current > 799 or y_current > 799 or x_current < 0 or y_current < 0):
+            if x_current > 799 or y_current > 799 or x_current < 0 or y_current < 0:
                 laserRange.append(1000)
                 break
 
@@ -36,10 +37,10 @@ def rayTrace(x_t_laser, mapPath, minProbability):
         if d == 100:
             laserRange.append(d * 10)
 
-    return (laserRange)
+    return laserRange
 
 
-####### Test below this line ########
+## Test below this line ##
 # x_t1 = [456, 713, math.pi/2]
 # mapPath = '../map/wean.dat'
 # minProbability = 0.95
