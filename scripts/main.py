@@ -40,6 +40,7 @@ txt = open(filename)
 results_O = []
 results_L_loc = []
 results_L = []
+mod_results_O = []
 
 with open('robotdata1.log') as inputfile:
     for line in inputfile:
@@ -55,45 +56,51 @@ with open('robotdata1.log') as inputfile:
 			floats = [float(x) for x in s.split()]
 			results_O.append([floats[0], floats[1], floats[2], floats[186]]) #x_loc, y_loc, angle, timestamp
 			results_L_loc.append([floats[3], floats[4], floats[5], floats[186]]) #x_loc, y_loc, angle, timestamp
-			results_L.append(floats[6:185]) #180 laser scans
-			
-			
+			results_L.append(floats[6:185]) #180 laser scans		
 	
 	
 #-------------------------------MAIN SCRIPT----------------------------------
 
 #-----------------initialize variables-------------------
-alpha1 = 10
-alpha2 = 10
-alpha3 = 10
-alpha4 = 10
+alpha1 = 1
+alpha2 = 1
+alpha3 = 100 #increasing these two variables appears to make the particles move farther
+alpha4 = 100
 mot=MotionModel(alpha1, alpha2, alpha3, alpha4)
 
 M=1000 #number of particles
-
-#initialize particle locations
-p_x = np.random.randint(4000,4500,M) #set for hallway, units in cm
-p_y = np.random.randint(1000,6000,M) #set for hallway, units in cm
-p_theta = np.random.uniform(-3.14,3.14,M)
 
 map=MapBuilder('../map/wean.dat')
 mapList = map.getMap()
 mapInit(mapList)
 
-#print mapList[400]
-#print len(mapList)
 
+#------------initialize particles throughout map--------
 #generate list of locations with '0' value
 counter = 0
+goodLocs_x = []
+goodLocs_y = []
 for i in range(0,800):
 	for j in range(0,800):
 		if mapList[i][j]==0:
 			counter = counter+1
-			
-print counter			
+			goodLocs_x.append(i)
+			goodLocs_y.append(j)
+		
+#randomly select from those locations with '0' value		
+p_x=[]
+p_y=[]
+for i in range(0,M):
+	num_rand=np.random.randint(1,counter)
+	p_y.append(goodLocs_x[num_rand]*10) #x and y axes are flipped!!! multiplied by 10 to convert to cm
+	p_x.append(goodLocs_y[num_rand]*10) #x and y axes are flipped!!!
+
+p_theta = np.random.uniform(-3.14,3.14,M)
+
 
 
 #----------------------main loop-------------------------
+
 for t in range(1, len(results_O)):
 
 	X_bar = []
@@ -109,9 +116,10 @@ for t in range(1, len(results_O)):
 		#pull x_t from motion model
 		if (t==1):
 			x_t0 = [p_x[m], p_y[m], p_theta[m]] #assign x_t0 as the particles from random initialization
+
 		else:
-			x_t0 = x_t1 #assign x_t0 as the old x_t
-			
+			x_t0 = X_bar_save[m][0]
+
 		x_t1 = mot.sample_motion_model(u_t0, u_t1, x_t0)
 		
 		#pull w_t from sensor model
@@ -121,7 +129,9 @@ for t in range(1, len(results_O)):
 		list = [x_t1, w_t]
 		X_bar.append(list)
 		
-		
+	X_bar_save = X_bar #this is so I can access X_bar in the next iteration
+
+	
 	#HERE WE IMPLEMENT THE IMPORTANCE SAMPLING, BUT ERIC SAID WE SHOULD FIRST TRY WITHOUT	
 	#
 	#
