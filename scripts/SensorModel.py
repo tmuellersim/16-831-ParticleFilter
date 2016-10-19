@@ -25,7 +25,7 @@ class SensorModel:
         self._lambda_short = .02
     
         self._max_range = 1000
-        self._min_probability = 0.25
+        self._min_probability = 0.95
         self._subsampling = 10
 
         self._norm_wts = 1.0 / (self._z_hit + self._z_short + self._z_max + self._z_rand)
@@ -83,11 +83,13 @@ class SensorModel:
             zstar_t1 = zstar_t1_arr[j]
             j += 1
             prob_zt1 = self.get_pmixture(z_t1, zstar_t1)
+            # prob_zt1 = self.get_pmixture(z_t1, zstar_t1) * 10e2
 
             # The log of products is the sum of the log of each
             q += math.log(prob_zt1)
 
-        return math.e ^ q  # This number may still be ridiculously small, check that it isn't zero
+        return q
+        # return math.pow(math.e, q)  # This number may still be ridiculously small, check that it isn't zero
 
     def plot_prob_zt1(self):
         prob_zt1 = []
@@ -126,8 +128,8 @@ class SensorModel:
                 continue
 
             # Initialize current location to origin of laser
-            x_current = xl_t1[0]/10 # MODIFIED TO BE IN IMAGE COORDS
-            y_current = xl_t1[1]/10 # MODIFIED TO BE IN IMAGE COORDS
+            x_current = xl_t1[0]/10  # MODIFIED TO BE IN IMAGE COORDS
+            y_current = xl_t1[1]/10  # MODIFIED TO BE IN IMAGE COORDS
             # Set angle of laser, moving clockwise
             laserDir = heading + math.radians(i - 90)
             dy = math.sin(laserDir)
@@ -135,9 +137,10 @@ class SensorModel:
 
             for d in xrange(101):
                 # Check if the current location is in a cell that is occupied
-                if occGrid[round(x_current), round(y_current)] > minProbability:  # round to the resolution of the occupancy grid
+                if occGrid[int(round(x_current)), int(round(y_current))] > minProbability:  # round to the resolution of the occupancy grid
                     if d == 0:  # check for particle on a boundary, set range to some epsilon above 0
-                        laserRange.append(1e-3)
+                        laserRange.append(1)
+                        break
                     laserRange.append(d*10)  # multiply by 10 to convert from occ grid pixel size of 10 cm to cm
                     break
                 # Walk along the ray until you find an obstacle

@@ -3,6 +3,7 @@ import sys
 
 from MotionModel import MotionModel
 from MapBuilder import MapBuilder
+from SensorModel import SensorModel
 
 from matplotlib import pyplot as plt
 from matplotlib import figure as fig
@@ -70,11 +71,12 @@ alpha4 = 0
 
 mot = MotionModel(alpha1, alpha2, alpha3, alpha4)
 
-M = 1000 # number of particles
+M = 10  # number of particles
 
 map = MapBuilder('../map/wean.dat')
 mapList = map.getMap()
 mapInit(mapList)
+sensorModel = SensorModel('../map/wean.dat')
 
 
 # ------------initialize particles throughout map--------
@@ -105,7 +107,8 @@ p_theta = np.random.uniform(3.10,3.14,M) # change 3.10 to -3.14 when script is f
 
 #----------------------main loop-------------------------
 
-for t in range(1, len(results_O)):
+for t in range(1, 100):
+# for t in range(1, len(results_O)):
     # a = datetime.now()
     X_bar = []
 
@@ -126,7 +129,8 @@ for t in range(1, len(results_O)):
         x_t1 = mot.sample_motion_model(u_t0, u_t1, x_t0)
 
         # pull w_t from sensor model
-        w_t = 1.0/M # set at 1 right now, all weights equal
+        w_t = sensorModel.beam_range_finder_model(z_t, x_t1)
+        # w_t = 1.0/M # set at 1 right now, all weights equal
 
         # update X_bar each timestep
         list = [x_t1, w_t]
