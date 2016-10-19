@@ -15,7 +15,7 @@ def mapInit(mapList):
 	fig = plt.figure()
 	plt.switch_backend('TkAgg') #this addition is so the display works on Merritt's computer..
 	mng = plt.get_current_fig_manager(); #mng.resize(*mng.window.maxsize())
-	mng.window.state('zoomed') #this is also so it works on Merritt's computer...
+	# mng.window.state('zoomed') #this is also so it works on Merritt's computer...
 	plt.ion(); plt.imshow(mapList, cmap='Greys'); plt.axis([0, 800, 0, 800]);
 
 
@@ -24,7 +24,7 @@ def mapShow(mapList, X_bar):
 	y_locs = [item[0][1]/10 for item in X_bar]
 	scat = plt.scatter(x_locs, y_locs, c='r', marker='o')
 	#plt.draw()
-	plt.pause(0.05)
+	plt.pause(1e-5)
 	scat.remove()
 
 
@@ -62,13 +62,13 @@ with open('robotdata1.log') as inputfile:
 #-------------------------------MAIN SCRIPT----------------------------------
 
 #-----------------initialize variables-------------------
-alpha1 = 1
-alpha2 = 1
-alpha3 = 100 #increasing these two variables appears to make the particles move farther
-alpha4 = 100
+alpha1 = 0
+alpha2 = 0
+alpha3 = 0 #increasing these two variables appears to make the particles move farther
+alpha4 = 0
 mot=MotionModel(alpha1, alpha2, alpha3, alpha4)
 
-M=1000 #number of particles
+M=100 #number of particles
 
 map=MapBuilder('../map/wean.dat')
 mapList = map.getMap()
