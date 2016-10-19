@@ -73,16 +73,20 @@ class SensorModel:
         xl_t1 = self.particle_to_laser_tf(x_t1)
         zstar_t1_arr = self.rayTrace(xl_t1, self._map_obj, self._min_probability)
 
-        q = 1; j = 0
-        for k in range(1,180):
-            if ( k % self._subsampling != 0 ):
+        q = 1
+        j = 0
+        for k in range(1, 180):
+            if k % self._subsampling != 0:
                 continue
             z_t1 = z_t1_arr[k]
-            zstar_t1 = zstar_t1_arr[j]; j = j+1
+            zstar_t1 = zstar_t1_arr[j]
+            j += 1
             prob_zt1 = self.get_pmixture(z_t1, zstar_t1)
-            q = q*prob_zt1
 
-        return q
+            # The log of products is the sum of the log of each
+            q += math.log(prob_zt1)
+
+        return math.e ^ q  # This number may still be ridiculously small, check that it isn't zero
 
     def plot_prob_zt1(self):
         prob_zt1 = []
@@ -131,6 +135,8 @@ class SensorModel:
             for d in xrange(101):
                 # Check if the current location is in a cell that is occupied
                 if occGrid[round(x_current), round(y_current)] > minProbability:  # round to the resolution of the occupancy grid
+                    if d == 0:  # check for particle on a boundary, set range to some epsilon above 0
+                        laserRange.append(1e-3)
                     laserRange.append(d*10)  # multiply by 10 to convert from occ grid pixel size of 10 cm to cm
                     break
                 # Walk along the ray until you find an obstacle
