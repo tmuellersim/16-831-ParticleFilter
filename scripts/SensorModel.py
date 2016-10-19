@@ -71,7 +71,7 @@ class SensorModel:
         param[out] prob_zt1 : likelihood of a range scan zt1 at time t
         """
         xl_t1 = self.particle_to_laser_tf(x_t1)
-        zstar_t1_arr = rayTrace(xl_t1, self._map_obj, self._min_probability)
+        zstar_t1_arr = self.rayTrace(xl_t1, self._map_obj, self._min_probability)
 
         q = 1; j = 0
         for k in range(1,180):
@@ -79,7 +79,7 @@ class SensorModel:
                 continue
             z_t1 = z_t1_arr[k]
             zstar_t1 = zstar_t1_arr[j]; j = j+1
-            prob_zt1 = get_pmixture(z_t1, zstar_t1)
+            prob_zt1 = self.get_pmixture(z_t1, zstar_t1)
             q = q*prob_zt1
 
         return q
@@ -100,7 +100,7 @@ class SensorModel:
         The laser on the robot is approximately 25 cm offset forward from the true center of the robot.
         """
         xl_t1_x = x_t1[0] + 25*math.cos(x_t1[2])
-        xl_t1_x = x_t1[1] + 25*math.sin(x_t1[2])        
+        xl_t1_y = x_t1[1] + 25*math.sin(x_t1[2]) #check this with Paloma!        
         xl_t1_theta = x_t1[2]
         xl_t1 = [xl_t1_x, xl_t1_y, xl_t1_theta]
         return xl_t1 
@@ -112,7 +112,7 @@ class SensorModel:
         param[out] minProbability : minimum threshold for detecting an obstacle in the occGrid
         """
         occGrid = mapObj.getMap()
-        heading = x_t_laser[2]
+        heading = xl_t1[2]
         laserRange = []
 
         for i in xrange(180):  # 180 degree sweep in laser scan with 1 degree increments
@@ -121,8 +121,8 @@ class SensorModel:
                 continue
 
             # Initialize current location to origin of laser
-            x_current = xl_t1[0]
-            y_current = xl_t1[1]
+            x_current = xl_t1[0]/10 # MODIFIED TO BE IN IMAGE COORDS
+            y_current = xl_t1[1]/10 # MODIFIED TO BE IN IMAGE COORDS
             # Set angle of laser, moving clockwise
             laserDir = heading + math.radians(i - 90)
             dy = math.sin(laserDir)
