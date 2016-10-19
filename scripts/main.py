@@ -32,8 +32,6 @@ def mapShow(mapList, X_bar):
     scat.remove()
 
 
-	
-
 #-------------------------------PARSE THE DATA FILE----------------------------------
 # this parses robotdata1 into three lists: odometry, laser position and time, and laser readings
 
@@ -70,6 +68,7 @@ alpha1 = 0
 alpha2 = 0
 alpha3 = 0 #increasing these two variables appears to make the particles move farther
 alpha4 = 0
+
 mot = MotionModel(alpha1, alpha2, alpha3, alpha4)
 
 M = 1000 # number of particles

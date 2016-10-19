@@ -26,9 +26,17 @@ class MotionModel:
         delta_trans = math.sqrt( (u_t1[0]-u_t0[0])**2 + (u_t1[1]-u_t0[1])**2 )
         delta_rot2 = u_t1[2] - u_t0[2] - delta_rot1
 
-        delta_rot1_hat = delta_rot1 - np.random.normal(0, math.sqrt(self._alpha1*delta_rot1**2 + self._alpha2*delta_trans**2))
-        delta_trans_hat = delta_trans - np.random.normal(0, math.sqrt(self._alpha3*delta_trans**2 + self._alpha4*delta_rot1**2 + self._alpha4*delta_rot2**2))
-        delta_rot2_hat = delta_rot2 - np.random.normal(0, math.sqrt(self._alpha1*delta_rot2**2 + self._alpha2*delta_trans**2))
+        std_rot1 = math.sqrt(self._alpha1*delta_rot1**2 + self._alpha2*delta_trans**2)
+        std_trans = math.sqrt(self._alpha3*delta_trans**2 + self._alpha4*delta_rot1**2 + self._alpha4*delta_rot2**2)
+        std_rot2 = math.sqrt(self._alpha1*delta_rot2**2 + self._alpha2*delta_trans**2)
+
+        noise_rot1 = np.random.normal(0, std_rot1) if std_rot1 > 0 else 0
+        noise_trans = np.random.normal(0, std_trans) if std_trans > 0 else 0
+        noise_rot2 = np.random.normal(0, std_rot2) if std_rot2 > 0 else 0
+
+        delta_rot1_hat = delta_rot1 - noise_rot1
+        delta_trans_hat = delta_trans - noise_trans
+        delta_rot2_hat = delta_rot2 - noise_rot2
 
         x_t1 = [x_t0[0] + delta_trans_hat*math.cos(x_t0[2]+delta_rot1_hat), \
                 x_t0[1] + delta_trans_hat*math.sin(x_t0[2]+delta_rot1_hat), \
