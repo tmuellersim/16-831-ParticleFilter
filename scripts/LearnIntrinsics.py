@@ -48,7 +48,7 @@ sensorModel = SensorModel('../map/wean.dat')
 #----------------------main loop-------------------------
 
 for other in range(0,12): # THE BOOK SUGGESTS 12 ITERATIONS
-    for t in range(1, 100):       
+    for t in range(1, len(results_O)):       
         (sigma_hit, lambda_short) = sensorModel.learn_params(results_L[t], results_O[t])  
 
     print (sigma_hit, lambda_short)
