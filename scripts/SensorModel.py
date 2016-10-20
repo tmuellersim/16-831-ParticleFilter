@@ -3,6 +3,7 @@ import math
 import time
 from matplotlib import pyplot as plt
 from scipy.stats import norm
+import pdb
 
 from MapBuilder import MapBuilder
 
@@ -16,39 +17,39 @@ class SensorModel:
 
         self._map_obj = MapBuilder(src_path_map)
 
-        self._z_hit = 5
-        self._z_short = 1
-        self._z_max = .1
-        self._z_rand = 3
+        self._z_hit = 50 #5
+        self._z_short = 10 #1
+        self._z_max =  .1 #.1
+        self._z_rand = 200 #3
 
-        self._sigma_hit = 30
+        self._sigma_hit = 100
         self._lambda_short = .02
     
         self._max_range = 1000
         self._min_probability = 0.95
         self._subsampling = 10
 
-        self._norm_wts = 1.0 / (self._z_hit + self._z_short + self._z_max + self._z_rand)
+        # self._norm_wts = 1.0 / (self._z_hit + self._z_short + self._z_max + self._z_rand)
+        self._norm_wts = 1.0
 
     def get_phit(self, z_t1, zstar_t1):
         if (z_t1 <= self._max_range):
             eta = 1 #norm((z_t1-zstar_t1), self._sigma_hit).cdf(self._max_range)
-            #print self._sigma_hit
             probability = eta * 1.0/math.sqrt(2*math.pi*self._sigma_hit**2) * math.e**( -0.5*(z_t1-zstar_t1)**2 / self._sigma_hit**2)
         else:
             probability = 0
         return probability
 
     def get_pshort(self, z_t1, zstar_t1):
-        if (z_t1 <= self._max_range):
-            eta = 1.0/(1 - math.e**(-self._lambda_short*zstar_t1))
+        if (z_t1 <= zstar_t1):
+            eta = 1.0 #1.0/(1 - math.e**(-self._lambda_short*zstar_t1))
             probability = eta*self._lambda_short*math.e**(-self._lambda_short*z_t1)
         else:
             probability = 0
         return probability
 
     def get_pmax(self, z_t1, zstar_t1):
-        if (z_t1 >= 0.98*self._max_range):
+        if (z_t1 >= 0.99*self._max_range):
             probability = 1.0
         else:
             probability = 0
@@ -84,12 +85,14 @@ class SensorModel:
             zstar_t1 = zstar_t1_arr[j]
             j += 1
             prob_zt1 = self.get_pmixture(z_t1, zstar_t1)
+
             # prob_zt1 = self.get_pmixture(z_t1, zstar_t1) * 10e2
 
             # The log of products is the sum of the log of each
-            q += math.log(prob_zt1)
+            # q += math.log(prob_zt1)
+            q *= prob_zt1
 
-        return q
+        return q    
         # return math.pow(math.e, q)  # This number may still be ridiculously small, check that it isn't zero
         
     def get_eta(self, z_t1, zstar_t1):
@@ -108,7 +111,7 @@ class SensorModel:
         zstar_t1_arr = self.rayTrace(xl_t1, self._map_obj, self._min_probability)
 
         q = 1; j = 0
-        e_hit = []; e_short = []; e_max = []; e_rand = [];
+        e_hit = []; e_short = []; e_max = []; e_rand = []
         for k in range(1, 180):
             if k % self._subsampling != 0:
                 continue
@@ -123,11 +126,11 @@ class SensorModel:
             j += 1
            
         # do we think that |Z|^-1 from lines 10 through 13 translates to (1.0/j)?
-        self._z_hit = (1.0/j)*sum(e_hit)
-        self._z_short = (1.0/j)*sum(e_short)
-        self._z_max = (1.0/j)*sum(e_max)
-        self._z_rand = (1.0/j)*sum(e_rand)
-        
+        self._z_hit = (1.0/(j+1))*sum(e_hit)
+        self._z_short = (1.0/(j+1))*sum(e_short)
+        self._z_max = (1.0/(j+1))*sum(e_max)
+        self._z_rand = (1.0/(j+1))*sum(e_rand)
+
         # these are just operations for line 14 of the algorithm (is the square correct?)
         zi_minus_zstar = [a-b for a,b in zip(z_t1_arr, zstar_t1_arr)]
         zi_minus_zstar_square = [h*h for h in zi_minus_zstar]
@@ -136,7 +139,7 @@ class SensorModel:
         #implement lines 14 and 15 of algorithm
         self._sigma_hit = math.sqrt((1.0/sum(e_hit))*sum(e_mult_zdiff))
         self._lambda_short = sum(e_short)/sum([a*b for a,b in zip(e_short,z_t1_arr)])
-        
+
         return(self._sigma_hit, self._lambda_short)
 
     def plot_prob_zt1(self):
@@ -147,7 +150,8 @@ class SensorModel:
             prob_zt1.append( self.get_pmixture(z_t1, zstar_t1) )
 
         fig = plt.figure()
-        plt.ion(); plt.plot(arr_zt1, prob_zt1); plt.axis([0, self._max_range, 0, 0.05]); plt.draw()
+        plt.ion(); plt.plot(arr_zt1, prob_zt1); plt.draw()
+        # plt.axis([0, self._max_range]);
         time.sleep(100)
 
     def particle_to_laser_tf(self, x_t1):

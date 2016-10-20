@@ -38,11 +38,10 @@ def mapShowScaledWts(mapList, X_bar):
     x_locs = [item[0][0]/10 for item in X_bar]
     y_locs = [item[0][1]/10 for item in X_bar]
 
-    wts = [item[1] for item in X_bar]
-    wts = (wts - np.min(wts))*10
-    print wts
+    wts = [item[1]*1e8 for item in X_bar]
+    # wts = (wts - np.min(wts))*10
 
-    scat = plt.scatter(x_locs, y_locs, c='r', marker='o', s=wts)
+    scat = plt.scatter(x_locs, y_locs, c='r', marker='o')
     # end = time.clock()
     # print "%.2gs" % (end-start)
     plt.pause(0.00001)
@@ -76,6 +75,9 @@ with open('robotdata1.log') as inputfile:
             results_L_loc.append([floats[3], floats[4], floats[5], floats[186]]) # x_loc, y_loc, angle, timestamp
             results_L.append(floats[6:185]) # 180 laser scans		
 
+
+# results_L = results_L[20:-1]            
+
 # -------------------------------MAIN SCRIPT----------------------------------
 
 # -----------------initialize variables-------------------
@@ -86,7 +88,7 @@ alpha4 = 0
 
 mot = MotionModel(alpha1, alpha2, alpha3, alpha4)
 
-M = 200  # number of particles
+M = 1000  # number of particles
 
 map = MapBuilder('../map/wean.dat')
 mapList = map.getMap()
@@ -116,8 +118,31 @@ for i in range(0,M):
     p_y.append(goodLocs_x[num_rand]*10) # x and y axes are flipped!!! multiplied by 10 to convert to cm
     p_x.append(goodLocs_y[num_rand]*10) # x and y axes are flipped!!!
 
-p_theta = np.random.uniform(3.10,3.14,M) # change 3.10 to -3.14 when script is fully debugged
+p_theta = np.random.uniform(-3.14,3.14,M) # change 3.10 to -3.14 when script is fully debugged
 
+
+#---------------------- functions called by the main loop -------------------------
+
+def importance_resampling(X_bar):
+    xt1_list = [item[0] for item in X_bar]
+    wts_list = [item[1] for item in X_bar]
+
+    # print wts_list
+    # pdb.set_trace()
+
+    wts_list = wts_list/np.sum(wts_list)
+
+    xt1_freqs = np.random.multinomial(len(wts_list), wts_list)
+    X_bar_resampled = []
+
+    for m in range(0, len(wts_list)):
+        for n in range(0, xt1_freqs[m]):
+            list = [ xt1_list[m], wts_list[m] ]
+            X_bar_resampled.append(list)
+
+    return X_bar_resampled
+
+#----------------------------------------------------------------------------------
 
 
 #----------------------main loop-------------------------
@@ -151,13 +176,15 @@ for t in range(1, 1000):
         list = [x_t1, w_t]
         X_bar.append(list)
 
-    X_bar_save = X_bar  # this is so I can access X_bar in the next iteration
- 
-    # HERE WE IMPLEMENT THE IMPORTANCE SAMPLING, BUT ERIC SAID WE SHOULD FIRST TRY WITHOUT
- 
 
-    if t % 10 == 1:
-        mapShowScaledWts(mapList, X_bar)
+    X_bar = importance_resampling(X_bar)
+
+    X_bar_save = X_bar  # this is so I can access X_bar in the next iteration
+
+    # HERE WE IMPLEMENT THE IMPORTANCE SAMPLING, BUT ERIC SAID WE SHOULD FIRST TRY WITHOUT
+
+    # if t % 10 == 1:
+    mapShow(mapList, X_bar)
 
 
 
