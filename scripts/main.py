@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import pdb
 
 from MotionModel import MotionModel
 from MapBuilder import MapBuilder
@@ -18,7 +19,7 @@ def mapInit(mapList):
     fig = plt.figure()
     plt.switch_backend('TkAgg')  # this addition is so the display works on Merritt's computer..
     mng = plt.get_current_fig_manager();  # mng.resize(*mng.window.maxsize())
-    mng.window.state('zoomed')  # this is also so it works on Merritt's computer...
+    # mng.window.state('zoomed')  # this is also so it works on Merritt's computer...
     plt.ion(); plt.imshow(mapList, cmap='Greys'); plt.axis([0, 800, 0, 800]);
 
 
@@ -32,6 +33,20 @@ def mapShow(mapList, X_bar):
     plt.pause(0.00001)
     scat.remove()
 
+def mapShowScaledWts(mapList, X_bar):
+    # start = time.clock()
+    x_locs = [item[0][0]/10 for item in X_bar]
+    y_locs = [item[0][1]/10 for item in X_bar]
+
+    wts = [item[1] for item in X_bar]
+    wts = (wts - np.min(wts))*10
+    print wts
+
+    scat = plt.scatter(x_locs, y_locs, c='r', marker='o', s=wts)
+    # end = time.clock()
+    # print "%.2gs" % (end-start)
+    plt.pause(0.00001)
+    scat.remove()
 
 # -------------------------------PARSE THE DATA FILE----------------------------------
 # this parses robotdata1 into three lists: odometry, laser position and time, and laser readings
@@ -71,7 +86,7 @@ alpha4 = 0
 
 mot = MotionModel(alpha1, alpha2, alpha3, alpha4)
 
-M = 10  # number of particles
+M = 200  # number of particles
 
 map = MapBuilder('../map/wean.dat')
 mapList = map.getMap()
@@ -107,7 +122,7 @@ p_theta = np.random.uniform(3.10,3.14,M) # change 3.10 to -3.14 when script is f
 
 #----------------------main loop-------------------------
 
-for t in range(1, 100):
+for t in range(1, 1000):
 # for t in range(1, len(results_O)):
     # a = datetime.now()
     X_bar = []
@@ -137,13 +152,12 @@ for t in range(1, 100):
         X_bar.append(list)
 
     X_bar_save = X_bar  # this is so I can access X_bar in the next iteration
-    # print X_bar
-
+ 
     # HERE WE IMPLEMENT THE IMPORTANCE SAMPLING, BUT ERIC SAID WE SHOULD FIRST TRY WITHOUT
-
+ 
 
     if t % 10 == 1:
-        mapShow(mapList, X_bar)
+        mapShowScaledWts(mapList, X_bar)
 
 
 
