@@ -5,6 +5,7 @@ import pdb
 from MotionModel import MotionModel
 from MapBuilder import MapBuilder
 from SensorModel import SensorModel
+from Resampling import Resampling
 
 from matplotlib import pyplot as plt
 from matplotlib import figure as fig
@@ -93,7 +94,9 @@ M = 1000  # number of particles
 map = MapBuilder('../map/wean.dat')
 mapList = map.getMap()
 mapInit(mapList)
+
 sensorModel = SensorModel('../map/wean.dat')
+resampler = Resampling()
 
 
 # ------------initialize particles throughout map--------
@@ -119,31 +122,6 @@ for i in range(0,M):
     p_x.append(goodLocs_y[num_rand]*10) # x and y axes are flipped!!!
 
 p_theta = np.random.uniform(-3.14,3.14,M) # change 3.10 to -3.14 when script is fully debugged
-
-
-#---------------------- functions called by the main loop -------------------------
-
-def importance_resampling(X_bar):
-    xt1_list = [item[0] for item in X_bar]
-    wts_list = [item[1] for item in X_bar]
-
-    # print wts_list
-    # pdb.set_trace()
-
-    wts_list = wts_list/np.sum(wts_list)
-
-    xt1_freqs = np.random.multinomial(len(wts_list), wts_list)
-    X_bar_resampled = []
-
-    for m in range(0, len(wts_list)):
-        for n in range(0, xt1_freqs[m]):
-            list = [ xt1_list[m], wts_list[m] ]
-            X_bar_resampled.append(list)
-
-    return X_bar_resampled
-
-#----------------------------------------------------------------------------------
-
 
 #----------------------main loop-------------------------
 
@@ -177,7 +155,7 @@ for t in range(1, 1000):
         X_bar.append(list)
 
 
-    X_bar = importance_resampling(X_bar)
+    X_bar = resampler.multinomial_sampler(X_bar)
 
     X_bar_save = X_bar  # this is so I can access X_bar in the next iteration
 
