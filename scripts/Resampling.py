@@ -8,13 +8,14 @@ class Resampling:
     """
 
     def __init__(self):
+        self._log_offset = 30
         pass
 
     def multinomial_sampler(self, X_bar):
         xt1_list = [item[0] for item in X_bar]
-        wts_list = [item[1] for item in X_bar]
+        wts_list = [item[1]+self._log_offset for item in X_bar]
 
-        # print wts_list
+        print wts_list
         # pdb.set_trace()
 
         wts_list = wts_list/np.sum(wts_list)
@@ -29,8 +30,30 @@ class Resampling:
 
         return X_bar_resampled
 
-    def low_variance_sampler(X_bar):
-        pass
+    def low_variance_sampler(self, X_bar):
+        xt1_list = [item[0] for item in X_bar]
+        wts_list = [item[1]+self._log_offset for item in X_bar]
+
+        wts_list = wts_list/np.sum(wts_list)
+
+        # print wts_list
+        # pdb.set_trace()
+
+        X_bar_resampled = []
+        M = len(wts_list)
+        r = np.random.uniform(0, 1.0/M)
+        i = 0; c = wts_list[i]
+
+        for m in range(0,M):
+            U = r + float(m)/M
+            while (U > c):
+                i = i + 1
+                c = c + wts_list[i]
+
+            list = [ xt1_list[i], wts_list[i] ]
+            X_bar_resampled.append(list)
+
+        return X_bar_resampled
 
 if __name__ == "__main__":
     pass
