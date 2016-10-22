@@ -5,6 +5,7 @@ import pdb
 from MotionModel import MotionModel
 from MapBuilder import MapBuilder
 from SensorModel import SensorModel
+from Resampling import Resampling
 
 from matplotlib import pyplot as plt
 from matplotlib import figure as fig
@@ -19,22 +20,17 @@ def mapInit(mapList):
     fig = plt.figure()
     plt.switch_backend('TkAgg')  # this addition is so the display works on Merritt's computer..
     mng = plt.get_current_fig_manager();  # mng.resize(*mng.window.maxsize())
-    # mng.window.state('zoomed')  # this is also so it works on Merritt's computer...
     plt.ion(); plt.imshow(mapList, cmap='Greys'); plt.axis([0, 800, 0, 800]);
 
 
 def mapShow(mapList, X_bar):
-    # start = time.clock()
     x_locs = [item[0][0]/10 for item in X_bar]
     y_locs = [item[0][1]/10 for item in X_bar]
     scat = plt.scatter(x_locs, y_locs, c='r', marker='o')
-    # end = time.clock()
-    # print "%.2gs" % (end-start)
     plt.pause(0.00001)
     scat.remove()
 
 def mapShowScaledWts(mapList, X_bar):
-    # start = time.clock()
     x_locs = [item[0][0]/10 for item in X_bar]
     y_locs = [item[0][1]/10 for item in X_bar]
 
@@ -42,8 +38,6 @@ def mapShowScaledWts(mapList, X_bar):
     # wts = (wts - np.min(wts))*10
 
     scat = plt.scatter(x_locs, y_locs, c='r', marker='o')
-    # end = time.clock()
-    # print "%.2gs" % (end-start)
     plt.pause(0.00001)
     scat.remove()
 
@@ -76,24 +70,27 @@ with open('robotdata1.log') as inputfile:
             results_L.append(floats[6:185]) # 180 laser scans		
 
 
-# results_L = results_L[20:-1]            
+results_L = results_L[14:-1]
+results_O = results_O[14:-1]            
 
 # -------------------------------MAIN SCRIPT----------------------------------
 
 # -----------------initialize variables-------------------
-alpha1 = 0
-alpha2 = 0
-alpha3 = 0  # increasing these two variables appears to make the particles move farther
-alpha4 = 0
+alpha1 = .0001
+alpha2 = .0001
+alpha3 = 0.01
+alpha4 = 0.01
 
 mot = MotionModel(alpha1, alpha2, alpha3, alpha4)
 
-M = 1000  # number of particles
+M = 2000  # number of particles
 
 map = MapBuilder('../map/wean.dat')
 mapList = map.getMap()
 mapInit(mapList)
+
 sensorModel = SensorModel('../map/wean.dat')
+resampler = Resampling()
 
 
 # ------------initialize particles throughout map--------
@@ -113,37 +110,12 @@ p_x = []
 p_y = []
 for i in range(0,M):
     num_rand=np.random.randint(1,counter)
-    # p_x.append(np.random.randint(4000,4050)) # uncomment this if you want a cluster near the robot start loc
-    # p_y.append(np.random.randint(4000,4050))
+    #p_x.append(np.random.randint(4000,4500)) # uncomment this if you want a cluster near the robot start loc
+    #p_y.append(np.random.randint(3900,4200))
     p_y.append(goodLocs_x[num_rand]*10) # x and y axes are flipped!!! multiplied by 10 to convert to cm
     p_x.append(goodLocs_y[num_rand]*10) # x and y axes are flipped!!!
 
 p_theta = np.random.uniform(-3.14,3.14,M) # change 3.10 to -3.14 when script is fully debugged
-
-
-#---------------------- functions called by the main loop -------------------------
-
-def importance_resampling(X_bar):
-    xt1_list = [item[0] for item in X_bar]
-    wts_list = [item[1] for item in X_bar]
-
-    # print wts_list
-    # pdb.set_trace()
-
-    wts_list = wts_list/np.sum(wts_list)
-
-    xt1_freqs = np.random.multinomial(len(wts_list), wts_list)
-    X_bar_resampled = []
-
-    for m in range(0, len(wts_list)):
-        for n in range(0, xt1_freqs[m]):
-            list = [ xt1_list[m], wts_list[m] ]
-            X_bar_resampled.append(list)
-
-    return X_bar_resampled
-
-#----------------------------------------------------------------------------------
-
 
 #----------------------main loop-------------------------
 
@@ -152,11 +124,11 @@ for t in range(1, 1000):
     # a = datetime.now()
     X_bar = []
 
-    # calculate u_t
+    # assign u_t
     u_t0 = results_O[t-1][0:3]
     u_t1 = results_O[t][0:3]  # this is just x,y,theta (no timestep)
 
-    # calculate w_t (will use later)
+    # assign z_t
     z_t = results_L[t]  # all 180 scans at each timestep
 
     for m in range(0,M):
@@ -170,21 +142,18 @@ for t in range(1, 1000):
 
         # pull w_t from sensor model
         w_t = sensorModel.beam_range_finder_model(z_t, x_t1)
-        # w_t = 1.0/M # set at 1 right now, all weights equal
 
         # update X_bar each timestep
         list = [x_t1, w_t]
         X_bar.append(list)
 
 
-    X_bar = importance_resampling(X_bar)
+    X_bar = resampler.low_variance_sampler(X_bar)
 
     X_bar_save = X_bar  # this is so I can access X_bar in the next iteration
 
-    # HERE WE IMPLEMENT THE IMPORTANCE SAMPLING, BUT ERIC SAID WE SHOULD FIRST TRY WITHOUT
-
-    # if t % 10 == 1:
-    mapShow(mapList, X_bar)
+    if t % 10 == 1:
+        mapShow(mapList, X_bar)
 
 
 

@@ -17,10 +17,10 @@ class SensorModel:
 
         self._map_obj = MapBuilder(src_path_map)
 
-        self._z_hit = 50 #5
-        self._z_short = 10 #1
+        self._z_hit = 30 #5
+        self._z_short = 5 #1
         self._z_max =  .1 #.1
-        self._z_rand = 200 #3
+        self._z_rand = 800 #3
 
         self._sigma_hit = 100
         self._lambda_short = .02
@@ -39,6 +39,14 @@ class SensorModel:
         else:
             probability = 0
         return probability
+        
+    def get_phit_feet(self, z_t1, zstar_t1):
+        if (z_t1 <= self._max_range):
+            eta = 1 #norm((z_t1-zstar_t1), self._sigma_hit).cdf(self._max_range)
+            probability = eta * 1.0/math.sqrt(2*math.pi*self._sigma_hit**2) * math.e**( -0.5*(z_t1-100)**2 / self._sigma_hit**2)
+        else:
+            probability = 0
+        return probability    
 
     def get_pshort(self, z_t1, zstar_t1):
         if (z_t1 <= zstar_t1):
@@ -63,7 +71,7 @@ class SensorModel:
         return probability
 
     def get_pmixture(self, z_t1, zstar_t1):
-        prob_zt1 = self._norm_wts * (self._z_hit*self.get_phit(z_t1, zstar_t1) + self._z_short*self.get_pshort(z_t1, zstar_t1) + \
+        prob_zt1 = self._norm_wts * (self._z_hit*self.get_phit(z_t1, zstar_t1) + self._z_hit*self.get_phit_feet(z_t1, zstar_t1) + self._z_short*self.get_pshort(z_t1, zstar_t1) + \
                         self._z_max*self.get_pmax(z_t1, zstar_t1) + self._z_rand*self.get_prand(z_t1, zstar_t1))
         return prob_zt1
 
@@ -78,7 +86,7 @@ class SensorModel:
 
         q = 1
         j = 0
-        for k in range(1, 180):
+        for k in range(0, 180):
             if k % self._subsampling != 0:
                 continue
             z_t1 = z_t1_arr[k]
@@ -91,7 +99,6 @@ class SensorModel:
             # The log of products is the sum of the log of each
             # q += math.log(prob_zt1)
             q *= prob_zt1
-
         return q    
         # return math.pow(math.e, q)  # This number may still be ridiculously small, check that it isn't zero
         
@@ -112,7 +119,7 @@ class SensorModel:
 
         q = 1; j = 0
         e_hit = []; e_short = []; e_max = []; e_rand = []
-        for k in range(1, 180):
+        for k in range(0, 180):
             if k % self._subsampling != 0:
                 continue
             z_t1 = z_t1_arr[k]
@@ -189,7 +196,7 @@ class SensorModel:
 
             for d in xrange(101):
                 # Check if the current location is in a cell that is occupied
-                if occGrid[int(round(x_current)), int(round(y_current))] > minProbability:  # round to the resolution of the occupancy grid
+                if occGrid[int(round(y_current)), int(round(x_current))] > minProbability:  # round to the resolution of the occupancy grid
                     if d == 0:  # check for particle on a boundary, set range to some epsilon above 0
                         laserRange.append(1)
                         break
@@ -213,6 +220,7 @@ if __name__=='__main__':
 
     src_path_map = '../map/wean.dat'
     sensor1 = SensorModel(src_path_map)
+    plt.switch_backend('TkAgg')
     sensor1.plot_prob_zt1()
 
     pass
