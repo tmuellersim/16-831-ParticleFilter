@@ -78,7 +78,7 @@ class SensorModel:
 
         q = 1
         j = 0
-        for k in range(1, 180):
+        for k in range(0, 180):
             if k % self._subsampling != 0:
                 continue
             z_t1 = z_t1_arr[k]
@@ -112,7 +112,7 @@ class SensorModel:
 
         q = 1; j = 0
         e_hit = []; e_short = []; e_max = []; e_rand = []
-        for k in range(1, 180):
+        for k in range(0, 180):
             if k % self._subsampling != 0:
                 continue
             z_t1 = z_t1_arr[k]
@@ -189,7 +189,7 @@ class SensorModel:
 
             for d in xrange(101):
                 # Check if the current location is in a cell that is occupied
-                if occGrid[int(round(x_current)), int(round(y_current))] > minProbability:  # round to the resolution of the occupancy grid
+                if occGrid[int(round(y_current)), int(round(x_current))] > minProbability:  # round to the resolution of the occupancy grid
                     if d == 0:  # check for particle on a boundary, set range to some epsilon above 0
                         laserRange.append(1)
                         break
