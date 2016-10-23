@@ -15,7 +15,7 @@ class Resampling:
         xt1_list = [item[0] for item in X_bar]
         wts_list = [item[1]+self._log_offset for item in X_bar]
 
-        print wts_list
+        # print wts_list
         # pdb.set_trace()
 
         wts_list = wts_list/np.sum(wts_list)

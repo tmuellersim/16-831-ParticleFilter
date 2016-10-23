@@ -24,13 +24,14 @@ def mapInit(mapList):
     plt.ion(); plt.imshow(mapList, cmap='Greys'); plt.axis([0, 800, 0, 800]);
 
 
-def mapShow(mapList, X_bar):
+def mapShow(mapList, X_bar, t):
     # start = time.clock()
     x_locs = [item[0][0]/10 for item in X_bar]
     y_locs = [item[0][1]/10 for item in X_bar]
     scat = plt.scatter(x_locs, y_locs, c='r', marker='o')
     # end = time.clock()
     # print "%.2gs" % (end-start)
+    plt.savefig('./images/image' + '%d' % t + '.png', bbox_inches='tight')
     plt.pause(0.00001)
     scat.remove()
 
@@ -72,9 +73,9 @@ with open('robotdata1.log') as inputfile:
         else:
             s = line[2:-1]
             floats = [float(x) for x in s.split()]
-            results_O.append([floats[0], floats[1], floats[2], floats[186]]) # x_loc, y_loc, angle, timestamp
-            results_L_loc.append([floats[3], floats[4], floats[5], floats[186]]) # x_loc, y_loc, angle, timestamp
-            results_L.append(floats[6:185]) # 180 laser scans		
+            results_O.append([floats[0], floats[1], floats[2], floats[186]])  # x_loc, y_loc, angle, timestamp
+            results_L_loc.append([floats[3], floats[4], floats[5], floats[186]])  # x_loc, y_loc, angle, timestamp
+            results_L.append(floats[6:185])  # 180 laser scans
 
 
 # results_L = results_L[20:-1]            
@@ -82,14 +83,14 @@ with open('robotdata1.log') as inputfile:
 # -------------------------------MAIN SCRIPT----------------------------------
 
 # -----------------initialize variables-------------------
-alpha1 = 0
+alpha1 = 5e-4
 alpha2 = 0
-alpha3 = 0  # increasing these two variables appears to make the particles move farther
+alpha3 = 2e-1  # increasing these two variables appears to make the particles move farther
 alpha4 = 0
 
 mot = MotionModel(alpha1, alpha2, alpha3, alpha4)
 
-M = 1000  # number of particles
+M = 2000  # number of particles
 
 map = MapBuilder('../map/wean.dat')
 mapList = map.getMap()
@@ -114,14 +115,14 @@ for i in range(0,800):
 # randomly select from those locations with '0' value
 p_x = []
 p_y = []
-for i in range(0,M):
-    num_rand=np.random.randint(1,counter)
+for i in range(0, M):
+    num_rand = np.random.randint(1, counter)
     # p_x.append(np.random.randint(4000,4050)) # uncomment this if you want a cluster near the robot start loc
     # p_y.append(np.random.randint(4000,4050))
-    p_y.append(goodLocs_x[num_rand]*10) # x and y axes are flipped!!! multiplied by 10 to convert to cm
-    p_x.append(goodLocs_y[num_rand]*10) # x and y axes are flipped!!!
+    p_y.append(goodLocs_x[num_rand]*10)  # x and y axes are flipped!!! multiplied by 10 to convert to cm
+    p_x.append(goodLocs_y[num_rand]*10)  # x and y axes are flipped!!!
 
-p_theta = np.random.uniform(-3.14,3.14,M) # change 3.10 to -3.14 when script is fully debugged
+p_theta = np.random.uniform(-3.14, 3.14, M) # change 3.10 to -3.14 when script is fully debugged
 
 #----------------------main loop-------------------------
 
@@ -155,14 +156,16 @@ for t in range(1, 1000):
         X_bar.append(list)
 
 
-    X_bar = resampler.multinomial_sampler(X_bar)
+    # X_bar = resampler.multinomial_sampler(X_bar)
+    X_bar = resampler.low_variance_sampler(X_bar)
 
     X_bar_save = X_bar  # this is so I can access X_bar in the next iteration
 
     # HERE WE IMPLEMENT THE IMPORTANCE SAMPLING, BUT ERIC SAID WE SHOULD FIRST TRY WITHOUT
 
     # if t % 10 == 1:
-    mapShow(mapList, X_bar)
+    mapShow(mapList, X_bar, t)
+    print 't is: %d' % t
 
 
 

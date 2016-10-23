@@ -17,24 +17,24 @@ class SensorModel:
 
         self._map_obj = MapBuilder(src_path_map)
 
-        self._z_hit = 50 #5
-        self._z_short = 10 #1
-        self._z_max =  .1 #.1
-        self._z_rand = 200 #3
+        self._z_hit = 1 #1
+        self._z_short = 0.01 #.01
+        self._z_max = 0.01 #.01
+        self._z_rand = 1000 #1000
 
-        self._sigma_hit = 100
-        self._lambda_short = .02
+        self._sigma_hit = 50  # 100
+        self._lambda_short = 1 / 60.0
     
         self._max_range = 1000
-        self._min_probability = 0.95
-        self._subsampling = 10
+        self._min_probability = 0.35
+        self._subsampling = 2
 
         # self._norm_wts = 1.0 / (self._z_hit + self._z_short + self._z_max + self._z_rand)
-        self._norm_wts = 1.0
+        self._norm_wts = 5.0
 
     def get_phit(self, z_t1, zstar_t1):
         if (z_t1 <= self._max_range):
-            eta = 1 #norm((z_t1-zstar_t1), self._sigma_hit).cdf(self._max_range)
+            eta = 1  # norm((z_t1-zstar_t1), self._sigma_hit).cdf(self._max_range)  # Eta will nearly always be close to 1, remove to reduce computation time
             probability = eta * 1.0/math.sqrt(2*math.pi*self._sigma_hit**2) * math.e**( -0.5*(z_t1-zstar_t1)**2 / self._sigma_hit**2)
         else:
             probability = 0
@@ -43,7 +43,8 @@ class SensorModel:
     def get_pshort(self, z_t1, zstar_t1):
         if (z_t1 <= zstar_t1):
             eta = 1.0 #1.0/(1 - math.e**(-self._lambda_short*zstar_t1))
-            probability = eta*self._lambda_short*math.e**(-self._lambda_short*z_t1)
+            # probability = eta*self._lambda_short*math.e**(-self._lambda_short*z_t1)
+            probability = eta * math.e ** (-self._lambda_short * z_t1)  # Removed lambda to make tuning a little more intuitive
         else:
             probability = 0
         return probability
@@ -145,12 +146,14 @@ class SensorModel:
     def plot_prob_zt1(self):
         prob_zt1 = []
         arr_zt1 = range(0, self._max_range + 1)
-        zstar_t1 = 300
+        zstar_t1 = 500
         for z_t1 in arr_zt1:
             prob_zt1.append( self.get_pmixture(z_t1, zstar_t1) )
 
         fig = plt.figure()
-        plt.ion(); plt.plot(arr_zt1, prob_zt1); plt.draw()
+        plt.ion()
+        plt.plot(arr_zt1, prob_zt1)
+        plt.draw()
         # plt.axis([0, self._max_range]);
         time.sleep(100)
 
@@ -182,6 +185,15 @@ class SensorModel:
             # Initialize current location to origin of laser
             x_current = xl_t1[0]/10  # MODIFIED TO BE IN IMAGE COORDS
             y_current = xl_t1[1]/10  # MODIFIED TO BE IN IMAGE COORDS
+            # Check that the particle isn't outside the map, put it on the edge if it is
+            if x_current > 799:
+                x_current = 799
+            if x_current < 1:
+                x_current = 1
+            if y_current > 799:
+                y_current = 799
+            if y_current < 1:
+                y_current = 1
             # Set angle of laser, moving clockwise
             laserDir = heading + math.radians(i - 90)
             dy = math.sin(laserDir)
@@ -200,7 +212,7 @@ class SensorModel:
                 y_current += dy
                 # Check if walked outside map area
                 if x_current > 799 or y_current > 799 or x_current < 0 or y_current < 0:
-                    laserRange.append(1000)
+                    laserRange.append(950)
                     break
 
             # Check if reached the end of the range without detecting obstacle, set range to 10 if true
