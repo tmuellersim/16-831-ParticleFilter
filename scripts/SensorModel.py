@@ -39,6 +39,14 @@ class SensorModel:
         else:
             probability = 0
         return probability
+        
+    def get_phit_feet(self, z_t1, zstar_t1):
+        if (z_t1 <= self._max_range):
+            eta = 1 #norm((z_t1-zstar_t1), self._sigma_hit).cdf(self._max_range)
+            probability = eta * 1.0/math.sqrt(2*math.pi*self._sigma_hit**2) * math.e**( -0.5*(z_t1-1.5)**2 / self._sigma_hit**2)
+        else:
+            probability = 0
+        return probability
 
     def get_pshort(self, z_t1, zstar_t1):
         if (z_t1 <= zstar_t1):
@@ -145,7 +153,7 @@ class SensorModel:
     def plot_prob_zt1(self):
         prob_zt1 = []
         arr_zt1 = range(0, self._max_range + 1)
-        zstar_t1 = 300
+        zstar_t1 = 200
         for z_t1 in arr_zt1:
             prob_zt1.append( self.get_pmixture(z_t1, zstar_t1) )
 
@@ -213,6 +221,7 @@ if __name__=='__main__':
 
     src_path_map = '../map/wean.dat'
     sensor1 = SensorModel(src_path_map)
+    plt.switch_backend('TkAgg')
     sensor1.plot_prob_zt1()
 
     pass

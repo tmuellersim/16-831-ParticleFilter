@@ -15,7 +15,7 @@ class Resampling:
         xt1_list = [item[0] for item in X_bar]
         wts_list = [item[1]+self._log_offset for item in X_bar]
 
-        print wts_list
+        #print wts_list
         # pdb.set_trace()
 
         wts_list = wts_list/np.sum(wts_list)
@@ -32,11 +32,13 @@ class Resampling:
 
     def low_variance_sampler(self, X_bar):
         xt1_list = [item[0] for item in X_bar]
+        #wts_min = min([item[1] for item in X_bar])
+        #wts_list = [item[1]-wts_min for item in X_bar]
         wts_list = [item[1]+self._log_offset for item in X_bar]
-
+        
         wts_list = wts_list/np.sum(wts_list)
 
-        # print wts_list
+        print wts_list
         # pdb.set_trace()
 
         X_bar_resampled = []
