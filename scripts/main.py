@@ -31,8 +31,8 @@ def mapShow(mapList, X_bar, t):
     scat = plt.scatter(x_locs, y_locs, c='r', marker='o')
     # end = time.clock()
     # print "%.2gs" % (end-start)
-    plt.savefig('./images/image' + '%d' % t + '.png', bbox_inches='tight')
     plt.pause(0.00001)
+    plt.savefig('./images/image' + '%d' % t + '.png', bbox_inches='tight')
     scat.remove()
 
 def mapShowScaledWts(mapList, X_bar):
@@ -83,14 +83,14 @@ with open('robotdata1.log') as inputfile:
 # -------------------------------MAIN SCRIPT----------------------------------
 
 # -----------------initialize variables-------------------
-alpha1 = 5e-4
+alpha1 = 1e-4
 alpha2 = 0
-alpha3 = 2e-1  # increasing these two variables appears to make the particles move farther
+alpha3 = 5e-1  # increasing these two variables appears to make the particles move farther
 alpha4 = 0
 
 mot = MotionModel(alpha1, alpha2, alpha3, alpha4)
 
-M = 2000  # number of particles
+M = 1000  # number of particles
 
 map = MapBuilder('../map/wean.dat')
 mapList = map.getMap()
@@ -105,10 +105,10 @@ resampler = Resampling()
 counter = 0
 goodLocs_x = []
 goodLocs_y = []
-for i in range(0,800):
-    for j in range(0,800):
-        if mapList[i][j]==0:
-            counter = counter+1
+for i in range(0, 800):
+    for j in range(0, 800):
+        if mapList[i][j] == 0:
+            counter = counter + 1
             goodLocs_x.append(i)
             goodLocs_y.append(j)
 
@@ -126,7 +126,7 @@ p_theta = np.random.uniform(-3.14, 3.14, M) # change 3.10 to -3.14 when script i
 
 #----------------------main loop-------------------------
 
-for t in range(1, 1000):
+for t in range(1, 25):
 # for t in range(1, len(results_O)):
     # a = datetime.now()
     X_bar = []
@@ -138,23 +138,25 @@ for t in range(1, 1000):
     # calculate w_t (will use later)
     z_t = results_L[t]  # all 180 scans at each timestep
 
-    for m in range(0,M):
-        # pull x_t from motion model
-        if t == 1:
-            x_t0 = [p_x[m], p_y[m], p_theta[m]]  # assign x_t0 as the particles from random initialization
-        else:
-            x_t0 = X_bar_save[m][0]			
 
-        x_t1 = mot.sample_motion_model(u_t0, u_t1, x_t0)
+    # Stack all particles into one numpy array and pass them into each individual function
+    if t == 1:
+        a = np.asarray(p_x)
+        b = np.asarray(p_y)
+        c = np.asarray(p_theta)
+        x_t0_array = np.concatenate((a[:, None], b[:, None], c[:, None]), axis=1)
+    else:
+        x_t0_array = np.asarray([x[0] for x in X_bar_save])
 
-        # pull w_t from sensor model
-        w_t = sensorModel.beam_range_finder_model(z_t, x_t1)
-        # w_t = 1.0/M # set at 1 right now, all weights equal
+    # Pass array of particles into motion model
+    x_t1_array = mot.sample_motion_model_array(u_t0, u_t1, x_t0_array)
 
-        # update X_bar each timestep
-        list = [x_t1, w_t]
+    # Pull w_t from sensor model
+    w_t = sensorModel.beam_range_finder_model_array(z_t, x_t1_array)
+
+    for i in xrange(len(x_t1_array[0])):
+        list = [[x[i] for x in x_t1_array], w_t[i]]
         X_bar.append(list)
-
 
     # X_bar = resampler.multinomial_sampler(X_bar)
     X_bar = resampler.low_variance_sampler(X_bar)

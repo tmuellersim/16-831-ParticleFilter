@@ -16,6 +16,7 @@ class MapBuilder:
         self._resolution = 10
         self._size_x = self._prob.shape[0]
         self._size_y = self._prob.shape[1]
+        self._prob = np.flipud(self._prob)
 
     def visualize_map(self):
         fig = plt.figure()
